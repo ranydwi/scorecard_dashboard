@@ -1,0 +1,307 @@
+---
+title: "Behavior Credit Scorecard Dashboard"
+output: 
+  flexdashboard::flex_dashboard:
+    orientation: columns
+    vertical_layout: fill
+runtime: shiny
+---
+
+<style>                     
+.navbar {
+  background-color:darkred;
+  border-color:black;
+}
+.navbar-brand {
+color:ivory!important;
+}
+</style>  
+
+```{r setup, include=FALSE}
+library(flexdashboard)
+library(shiny)
+library(shinyjs)
+source("setup.R")
+library(plotly)
+```
+
+```{r global, include=FALSE}
+# read data
+data <- read_xlsx("data_input/credit_taiwan.xlsx")
+data_clean <- data %>% 
+  mutate_at(.vars = c("sex", "education", "marriage"), as.factor) %>% 
+  select(-id)
+
+# cross validation
+RNGkind(sample.kind= "Rounding")
+set.seed(123) # mengunci kerandoman data
+
+# membuat binary split data menjadi set data training dan testing
+splitter <- initial_split(data_clean, prop = 0.8)
+
+# splitting
+train <- training(splitter)
+test <- testing(splitter)
+
+binning <- woebin(dt = train,
+                  y = "gb_flag",
+                  positive = 0)
+# data train
+train_woe <- woebin_ply(dt = train,
+                        bins = binning)
+# data test
+test_woe <- woebin_ply(dt = test,
+                       bins = binning)
+
+train_woe_final <- train_woe %>% 
+  select(-sex_woe, -marriage_woe)
+
+test_woe_final <- test_woe %>% 
+  select(-sex_woe, -marriage_woe)
+
+plot <- woebin_plot(bins = binning)
+
+model <- readRDS("model_sc.RDS")
+score_card <- scorecard(bins = binning,
+                        model = model, # Model terbaik
+                        points0 = 600,
+                        odds0 = 1/19,
+                        pdo = 20)
+```
+
+
+Sidebar {.sidebar}
+-----------------------------------------------------------------------
+
+```{r}
+useShinyjs(rmd = TRUE)
+
+div(
+  class = "text center",
+  h3(strong("Please Set the Characteristic "))
+)
+
+sliderInput(inputId = "limit_bal",
+            label = "Limit Balance",
+            min = 10000, 
+            max = 800000, 
+            value = 1)
+
+sliderInput(inputId = "education",
+            label = "Education",
+            min = 1, 
+            max = 4, 
+            value = 1)
+
+sliderInput(inputId = "age",
+            label = "Age",
+            min = 20, 
+            max = 80, 
+            value = 1)
+                
+sliderInput(inputId = "pay_1",
+            label = "Payment Status (smaller is better)",
+            min = 0, 
+            max = 8, 
+            value = 1)
+
+sliderInput(inputId = "pay_2",
+            label = "Payment Status (smaller is better)",
+            min = 0, 
+            max = 8, 
+            value = 1)
+
+sliderInput(inputId = "pay_3",
+            label = "Payment Status (smaller is better)",
+            min = 0, 
+            max = 8, 
+            value = 1)
+
+sliderInput(inputId = "pay_3",
+            label = "Payment Status (smaller is better)",
+            min = 0, 
+            max = 8, 
+            value = 1)
+
+sliderInput(inputId = "pay_4",
+            label = "Payment Status (smaller is better)",
+            min = 0, 
+            max = 8, 
+            value = 1)
+
+sliderInput(inputId = "pay_5",
+            label = "Payment Status (smaller is better)",
+            min = 0, 
+            max = 8, 
+            value = 1)
+
+sliderInput(inputId = "pay_6",
+            label = "Payment Status (smaller is better)",
+            min = 0, 
+            max = 8, 
+            value = 1)
+
+sliderInput(inputId = "bill_amt1",
+            label = "Billing Statement on April",
+            min = 0, 
+            max = 1000000, 
+            value = 1)
+
+sliderInput(inputId = "bill_amt2",
+            label = "Billing Statement on Mei",
+            min = 0, 
+            max = 1000000, 
+            value = 1)
+
+sliderInput(inputId = "bill_amt3",
+            label = "Billing Statement on June",
+            min = 0, 
+            max = 1000000, 
+            value = 1)
+
+sliderInput(inputId = "bill_amt4",
+            label = "Billing Statement on July",
+            min = 0, 
+            max = 1000000, 
+            value = 1)
+
+sliderInput(inputId = "bill_amt5",
+            label = "Billing Statement on August",
+            min = 0, 
+            max = 1000000, 
+            value = 1)
+
+sliderInput(inputId = "bill_amt6",
+            label = "Billing Statement on September",
+            min = 0, 
+            max = 1000000, 
+            value = 1)
+
+sliderInput(inputId = "pay_amt1",
+            label = "Pay Amount on April",
+            min = 0, 
+            max = 1000000, 
+            value = 1)
+sliderInput(inputId = "pay_amt2",
+            label = "Pay Amount on Mei",
+            min = 0, 
+            max = 1000000, 
+            value = 1)
+sliderInput(inputId = "pay_amt3",
+            label = "Pay Amount on June",
+            min = 0, 
+            max = 1000000, 
+            value = 1)
+sliderInput(inputId = "pay_amt4",
+            label = "Pay Amount on July",
+            min = 0, 
+            max = 1000000, 
+            value = 1)
+sliderInput(inputId = "pay_amt5",
+            label = "Pay Amount on August",
+            min = 0, 
+            max = 1000000, 
+            value = 1)
+sliderInput(inputId = "pay_amt6",
+            label = "Pay Amount on September",
+            min = 0, 
+            max = 1000000, 
+            value = 1)
+```
+
+Column {data-width=350}
+-----------------------------------------------------------------------
+<h1>**Credit Scorecard Dashboard**</h1>
+
+<h4>Welcome to the Interactive Dashboard for Credit Behavior Scorecard Analysis and Debtor Score Prediction! This Shiny dashboard provides a comprehensive tool for analyzing credit behavior scorecards and predicting credit scores for debtors. It is designed to help financial institutions, credit analysts, and decision-makers understand and evaluate the creditworthiness of their clients based on historical behavior data</h4>
+
+
+### Score Prediction Tools
+
+```{r}
+
+name <- eventReactive(input$action, input$NAME)
+
+test_data <- eventReactive(input$action, {
+  data_input <- data.frame(
+    limit_bal = input$limit_bal,
+    education = input$education,
+    age = input$age,
+    pay_1 = input$pay_1,
+    pay_2 = input$pay_2,
+    pay_3 = input$pay_3,
+    pay_4 = input$pay_4,
+    pay_5 = input$pay_5,
+    pay_6 = input$pay_6,
+    bill_amt1 = input$bill_amt1,
+    bill_amt2 = input$bill_amt2,
+    bill_amt3 = input$bill_amt3,
+    bill_amt4 = input$bill_amt4,
+    bill_amt5 = input$bill_amt5,
+    bill_amt6 = input$bill_amt6,
+    pay_amt1 = input$pay_amt1,
+    pay_amt2 = input$pay_amt2,
+    pay_amt3 = input$pay_amt3,
+    pay_amt4 = input$pay_amt4,
+    pay_amt5 = input$pay_amt5,
+    pay_amt6 = input$pay_amt6
+  )
+  
+  data_predict <- data_input %>% mutate_at(colnames(data_input), as.numeric)
+  
+})
+
+prediction <- eventReactive(input$action,{
+  
+    pred <- predict_behaviour(test_data(), 
+                  score_card, 
+                  cutoff = 528)
+    
+    pred$score
+    
+  })
+
+output$text_result <- renderText({as.numeric(prediction())})
+
+output$gauge <- renderPlotly({
+    fig <- plot_ly(
+      domain = list(x = c(0, 1), y = c(0, 1)),
+      value = prediction(),
+      type = "indicator",
+      mode = "gauge+number",
+      gauge = list(
+        axis = list(range = list(NULL, 900),
+                    tickwidth = 1,
+                    tickcolor = "black"),
+        bar = list(color = "#582f0e"),
+        bgcolor = "white",
+        borderwidth = 2,
+        bordercolor = "gray",
+        steps = list(
+          list(range = c(539,900), color = "#dbfeb8"),
+          list(range = c(0, 538), color = "#fbc3bc")),
+      threshold = list(
+        line = list(color = "gray", width = 4),
+        thickness = 0.75,
+        value = 538)))
+    
+    fig <- fig %>%
+      layout(
+        margin = list(l=15,r=25),
+        paper_bgcolor = "#fefae0",
+        font = list(color = "#582f0e", family = "Arial"),
+        title= list(text = "Score untuk Debitur:", x = 0.49, y = 0.4, size = 15))
+    
+    fig
+  })
+
+box(title = actionButton(inputId = "action", label = "Check the Score!"),
+                  enable_label = TRUE,
+                  label_status = "info",
+                  status = "primary",
+                  width = 12,
+                  verbatimTextOutput("text_result"),
+                  plotlyOutput("gauge"))
+
+```
+
